@@ -1,0 +1,105 @@
+# Задаем длину рамки и минимальную длину подпоследовательности
+frame_length = 11
+min_subseq_length = 4
+# Полные пути к файлам
+genome_file_path = ""
+target_file_path = ""
+# Чтение геномного файла
+with open(genome_file_path, 'r') as genome_file:
+    genome_sequence = genome_file.read()
+    # Удаление всех абзацев из строки
+    genome_sequence = genome_sequence.replace('\n', '').replace('\r', '')
+# Чтение целевого файла
+with open(target_file_path, 'r') as target_file:
+    target_sequence = target_file.read()
+    # Удаление всех абзацев из строки
+    target_sequence = target_sequence.replace('\n', '').replace('\r', '')
+# Функция для получения всех подпоследовательностей заданной длины из строки
+def get_subsequences(seq, length):
+    # Создаем пустой список для хранения подпоследовательностей
+    subseqs = []
+    # Для каждой позиции в строке, кроме последних length - 1 символов
+    for i in range(len(seq) - length + 1):
+        # Получаем подпоследовательность длины length, начиная с позиции i
+        subseq = seq[i:i + length]
+        # Добавляем подпоследовательность в список
+        subseqs.append(subseq)
+    # Возвращаем список подпоследовательностей
+    return subseqs
+# Функция для подсчета количества вхождений подпоследовательностей в целевую строку
+def count_subseq_occurrences(subseqs, target):
+    # Создаем пустой словарь для хранения количества вхождений
+    counts = {}
+    # Для каждой подпоследовательности в списке
+    for subseq in subseqs:
+        # Если подпоследовательность уже есть в словаре
+        if subseq in counts:
+            # Пропускаем ее, так как мы уже посчитали ее вхождение
+            continue
+        # Иначе
+        else:
+            # Используем метод count для подсчета количества вхождений подпоследовательности в целевую строку
+            counts[subseq] = target.count(subseq)
+    # Возвращаем словарь с количеством вхождений
+    return counts
+# Функция для нахождения самой уникальной последовательности среди списка
+def find_most_unique_sequence(sequences, counts):
+    # Создаем переменную для хранения самой уникальной последовательности
+    most_unique_seq = None
+    # Создаем переменную для хранения минимального количества вхождений
+    min_count = float("inf")
+    # Для каждой последовательности в списке
+    for seq in sequences:
+        # Получаем список всех подпоследовательностей от минимальной до максимальной длины
+        subseqs = []
+        for length in range(min_subseq_length, frame_length + 1):
+            subseqs.extend(get_subsequences(seq, length))
+        # Подсчитываем суммарное количество вхождений всех подпоследовательностей в целевую строку
+        total_count = 0
+        for subseq in subseqs:
+            if subseq in counts:
+                total_count += counts[subseq]
+        # Если суммарное количество вхождений меньше, чем текущее минимальное
+        if total_count < min_count:
+            # Обновляем самую уникальную последовательность и минимальное количество вхождений
+            most_unique_seq = seq
+            min_count = total_count
+    # Возвращаем самую уникальную последовательность и минимальное количество вхождений
+    return most_unique_seq, min_count
+# Создаем пустой список для хранения уникальных последовательностей
+mismatches = []
+# Сравниваем последовательности
+for i in range(len(genome_sequence) - frame_length + 1):
+    # Получаем рамку длины frame_length, начиная с позиции i
+    frame = genome_sequence[i:i + frame_length]
+    # Если рамка не встречается в целевой последовательности
+    if all(base in 'AGTC' for base in frame) and frame not in target_sequence:
+        # Добавляем рамку в список уникальных последовательностей
+        mismatches.append(frame)
+# Выводим найденные уникальные последовательности и их количество
+for mismatch in mismatches:
+    print(mismatch)
+print(f"Найдено {len(mismatches)} уникальных последовательностей длины {frame_length}")
+# Спрашиваем, желает ли пользователь найти самую уникальную из них
+answer = input("Желаете найти самую уникальную из найденных последовательностей? (да/нет) ")
+# Если пользователь соглашается
+if answer.lower() == "да":
+    # Создаем пустой словарь для хранения количества вхождений подпоследовательностей
+    counts = {}
+    # Для каждой уникальной последовательности в списке
+    for mismatch in mismatches:
+        # Получаем список всех подпоследовательностей от минимальной до максимальной длины
+        subseqs = []
+        for length in range(min_subseq_length, frame_length + 1):
+            subseqs.extend(get_subsequences(mismatch, length))
+            # Подсчитываем количество вхождений каждой подпоследовательности в целевую строку
+            # и обновляем словарь с количеством вхождений
+            counts.update(count_subseq_occurrences(subseqs, target_sequence))
+    # Находим самую уникальную последовательность и минимальное количество вхождений
+    most_unique_seq, min_count = find_most_unique_sequence(mismatches, counts)
+    # Выводим результат
+    print(f"Самая уникальная последовательность в геноме патогена: {most_unique_seq}")
+    print(f"Количество вхождений ее подпоследовательностей в геном хозяина: {min_count}")
+# Иначе
+else:
+    pass
